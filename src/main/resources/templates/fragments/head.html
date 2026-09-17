@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="assets(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+    <!-- Exposed on every page (Spring Security attaches a CsrfToken to every request regardless of
+         whether the path is protected) so any fetch()-based POST - not just <form> submissions,
+         which Thymeleaf's Spring Security dialect already covers automatically - can attach the
+         token as a header. See /assets/js/csrf.js. -->
+    <meta name="_csrf" th:content="${_csrf?.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+    <title th:text="${title}">Restaurant</title>
+    <link rel="stylesheet" th:href="@{/assets/vendor/fonts/fonts.css}"/>
+    <link rel="stylesheet" th:href="@{/assets/vendor/bootstrap/css/bootstrap.min.css}"/>
+    <link rel="stylesheet" th:href="@{/assets/vendor/bootstrap-icons/bootstrap-icons.css}"/>
+    <link rel="stylesheet" th:href="@{/assets/css/theme.css}"/>
+    <style th:if="${restaurant != null}" th:text="'|:root { --brand: ' + ${restaurant.themeColor} + '; }|'"></style>
+    <style th:unless="${restaurant != null}">:root { --brand: #c0392b; }</style>
+    <script>
+        (function () {
+            var stored = localStorage.getItem('theme');
+            if (stored) { document.documentElement.setAttribute('data-bs-theme', stored); }
+        })();
+    </script>
+</head>
+</html>

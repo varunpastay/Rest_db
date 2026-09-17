@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: assets('Sales Reports')}"></head>
+<body>
+<div th:replace="~{fragments/owner-nav :: nav('reports')}"></div>
+
+<style>
+    .stat-card { display:flex; align-items:center; gap:14px; }
+    .stat-icon {
+        width:48px; height:48px; border-radius:var(--radius-md);
+        display:flex; align-items:center; justify-content:center; font-size:1.25rem;
+        background: color-mix(in srgb, var(--brand) 12%, transparent);
+        color: var(--brand); flex-shrink:0;
+    }
+    .bar-row { margin-bottom:14px; }
+    .bar-row:last-child { margin-bottom:0; }
+    .bar-row .bar-label-row { display:flex; justify-content:space-between; gap:8px; font-size:0.85rem; margin-bottom:4px; }
+    .bar-track {
+        height:10px; border-radius:var(--radius-pill);
+        background: color-mix(in srgb, var(--brand) 10%, transparent);
+        overflow:hidden;
+    }
+    .bar-fill {
+        height:100%; border-radius:var(--radius-pill);
+        background: var(--brand);
+        transition: width 0.4s ease;
+    }
+    .least-list .list-group-item { display:flex; justify-content:space-between; }
+</style>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <h1 class="h4 mb-0"><i class="bi bi-bar-chart"></i> Sales Reports</h1>
+        <div class="d-flex gap-2 flex-wrap">
+            <div class="btn-group">
+                <a class="btn btn-sm" th:classappend="${range.name() == 'TODAY'} ? 'btn-brand' : 'btn-outline-brand'" th:href="@{/owner/reports(range='TODAY')}">Today</a>
+                <a class="btn btn-sm" th:classappend="${range.name() == 'WEEK'} ? 'btn-brand' : 'btn-outline-brand'" th:href="@{/owner/reports(range='WEEK')}">This Week</a>
+                <a class="btn btn-sm" th:classappend="${range.name() == 'MONTH'} ? 'btn-brand' : 'btn-outline-brand'" th:href="@{/owner/reports(range='MONTH')}">This Month</a>
+                <a class="btn btn-sm" th:classappend="${range.name() == 'YEAR'} ? 'btn-brand' : 'btn-outline-brand'" th:href="@{/owner/reports(range='YEAR')}">This Year</a>
+            </div>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/owner/reports/export/excel(range=${range})}"><i class="bi bi-file-earmark-excel"></i> Export Excel</a>
+            <a class="btn btn-sm btn-outline-secondary" th:href="@{/owner/reports/export/pdf(range=${range})}"><i class="bi bi-file-earmark-pdf"></i> Export PDF</a>
+        </div>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card h-100"><div class="card-body stat-card">
+                <div class="stat-icon"><i class="bi bi-cash-stack"></i></div>
+                <div>
+                    <div class="small text-muted-brand">Total Revenue</div>
+                    <div class="h4 brand-text mb-0" th:text="${restaurant.currencySymbol + #numbers.formatDecimal(report.totalRevenue, 1, 2)}">0</div>
+                </div>
+            </div></div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card h-100"><div class="card-body stat-card">
+                <div class="stat-icon"><i class="bi bi-receipt"></i></div>
+                <div>
+                    <div class="small text-muted-brand">Completed Orders</div>
+                    <div class="h4 mb-0" th:text="${report.orderCount}">0</div>
+                </div>
+            </div></div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card h-100"><div class="card-body stat-card">
+                <div class="stat-icon"><i class="bi bi-graph-up-arrow"></i></div>
+                <div>
+                    <div class="small text-muted-brand">Average Order Value</div>
+                    <div class="h4 mb-0" th:text="${restaurant.currencySymbol + #numbers.formatDecimal(report.averageOrderValue, 1, 2)}">0</div>
+                </div>
+            </div></div>
+        </div>
+    </div>
+
+    <!-- Top / Least selling -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-trophy"></i> Top Selling Items</div>
+                <div class="card-body">
+                    <div th:each="b : ${report.topSellerBars}" class="bar-row">
+                        <div class="bar-label-row"><span th:text="${b.label}">Item</span><span class="fw-semibold" th:text="${b.valueDisplay}">0 sold</span></div>
+                        <div class="bar-track"><div class="bar-fill" th:style="'width:' + ${b.percent} + '%'"></div></div>
+                    </div>
+                    <p th:if="${report.topSellerBars.isEmpty()}" class="text-muted-brand mb-0">No completed orders in this period yet.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-graph-down"></i> Least Selling Items</div>
+                <ul class="list-group list-group-flush least-list">
+                    <li class="list-group-item" th:each="e : ${report.leastSellers}">
+                        <span th:text="${e.key}"></span><span class="fw-semibold" th:text="${e.value} + ' sold'"></span>
+                    </li>
+                    <li class="list-group-item text-muted-brand" th:if="${report.leastSellers.isEmpty()}">No data yet.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Peak hours / Revenue trend -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-clock-history"></i> Peak Hours (by revenue)</div>
+                <div class="card-body">
+                    <div th:each="b : ${report.peakHourBars}" class="bar-row">
+                        <div class="bar-label-row"><span th:text="${b.label}">00:00 - 01:00</span><span class="fw-semibold" th:text="${restaurant.currencySymbol + b.valueDisplay}">0</span></div>
+                        <div class="bar-track"><div class="bar-fill" th:style="'width:' + ${b.percent} + '%'"></div></div>
+                    </div>
+                    <p th:if="${report.peakHourBars.isEmpty()}" class="text-muted-brand mb-0">No data yet.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header fw-semibold"><i class="bi bi-graph-up"></i> Revenue Trend / Order Trends</div>
+                <div class="card-body">
+                    <div th:each="b : ${report.revenueTrendBars}" class="bar-row">
+                        <div class="bar-label-row"><span th:text="${b.label}">Day</span><span class="fw-semibold" th:text="${restaurant.currencySymbol + b.valueDisplay}">0</span></div>
+                        <div class="bar-track"><div class="bar-fill" th:style="'width:' + ${b.percent} + '%'"></div></div>
+                    </div>
+                    <p th:if="${report.revenueTrendBars.isEmpty()}" class="text-muted-brand mb-0">No data yet.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Revenue trend graph -->
+    <div class="card mb-4" th:if="${!report.trendDayLabels.isEmpty()}">
+        <div class="card-header fw-semibold"><i class="bi bi-activity"></i> Revenue Over Time</div>
+        <div class="card-body">
+            <canvas id="revenueChart" height="90"></canvas>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    var TREND_LABELS = /*[[${report.trendDayLabels}]]*/ [];
+    var TREND_REVENUE = /*[[${report.trendDayRevenue}]]*/ [];
+    var BRAND_COLOR = /*[[${restaurant.themeColor}]]*/ '#c0392b';
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script>
+    (function () {
+        var canvas = document.getElementById('revenueChart');
+        if (!canvas || typeof Chart === 'undefined' || !TREND_LABELS.length) return;
+        new Chart(canvas.getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: TREND_LABELS,
+                datasets: [{
+                    label: 'Revenue',
+                    data: TREND_REVENUE,
+                    borderColor: BRAND_COLOR,
+                    backgroundColor: BRAND_COLOR + '33',
+                    tension: 0.35,
+                    fill: true,
+                    pointRadius: 3
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true } }
+            }
+        });
+    })();
+</script>
+<script th:src="@{/assets/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/assets/js/csrf.js}"></script>
+<script th:src="@{/assets/js/dark-mode-toggle.js}"></script>
+</body>
+</html>

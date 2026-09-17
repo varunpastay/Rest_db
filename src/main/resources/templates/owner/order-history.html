@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: assets('Order History')}"></head>
+<body>
+<div th:replace="~{fragments/owner-nav :: nav('history')}"></div>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+    <h1 class="h4 mb-4"><i class="bi bi-clock-history"></i> Order History</h1>
+
+    <p th:if="${orders.isEmpty()}" class="text-muted-brand text-center py-5">
+        No orders placed yet.
+    </p>
+
+    <div class="table-responsive" th:unless="${orders.isEmpty()}">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th>Order No</th>
+                    <th>Table</th>
+                    <th>Status</th>
+                    <th>Items</th>
+                    <th>Total</th>
+                    <th>Placed</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <th:block th:each="order : ${orders}">
+                    <tr>
+                        <td th:text="${order.orderNo}">ORD-...</td>
+                        <td>Table <span th:text="${order.table.tableNo}">1</span></td>
+                        <td>
+                            <span class="status-chip" th:classappend="'status-' + ${#strings.toLowerCase(order.status.name())}"
+                                  th:text="${order.status}">PENDING</span>
+                        </td>
+                        <td th:text="${order.items.size()} + (${order.items.size()} == 1 ? ' item' : ' items')">3 items</td>
+                        <td th:text="${restaurant.currencySymbol + order.grandTotal}">₹0</td>
+                        <td th:text="${#temporals.format(order.createdAt, 'dd MMM, HH:mm')}">Today</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-brand" type="button"
+                                    data-bs-toggle="collapse" th:data-bs-target="'#order-details-' + ${order.orderId}">
+                                <i class="bi bi-eye"></i> View
+                            </button>
+                        </td>
+                    </tr>
+                    <tr class="collapse" th:id="'order-details-' + ${order.orderId}">
+                        <td colspan="7" class="bg-body-tertiary">
+                            <div class="p-2">
+                                <ul class="list-unstyled mb-2">
+                                    <li th:each="item : ${order.items}" class="d-flex justify-content-between border-bottom py-1">
+                                        <span>
+                                            <strong th:text="${item.quantity} + 'x'">1x</strong>
+                                            <span th:text="${item.foodNameSnapshot}">Item</span>
+                                            <div th:if="${item.specialInstructions}" class="small text-muted-brand"
+                                                 th:text="'Note: ' + ${item.specialInstructions}"></div>
+                                        </span>
+                                        <span th:text="${restaurant.currencySymbol + item.lineTotal}">₹0</span>
+                                    </li>
+                                </ul>
+                                <div th:if="${order.customerNote}" class="small text-muted-brand mb-2">
+                                    <i class="bi bi-sticky"></i> Order note: <span th:text="${order.customerNote}"></span>
+                                </div>
+                                <div class="small">
+                                    <div>Subtotal: <span th:text="${restaurant.currencySymbol + order.subtotal}"></span></div>
+                                    <div>Tax: <span th:text="${restaurant.currencySymbol + order.taxAmount}"></span></div>
+                                    <div th:if="${order.serviceChargeAmount.signum() > 0}">
+                                        Service charge: <span th:text="${restaurant.currencySymbol + order.serviceChargeAmount}"></span>
+                                    </div>
+                                    <div th:if="${order.discountAmount.signum() > 0}">
+                                        Discount: -<span th:text="${restaurant.currencySymbol + order.discountAmount}"></span>
+                                    </div>
+                                    <div class="fw-bold">Grand Total: <span th:text="${restaurant.currencySymbol + order.grandTotal}"></span></div>
+                                </div>
+                                <a th:if="${order.status.name() == 'COMPLETED' and order.tableSession != null}"
+                                   class="btn btn-sm btn-outline-secondary mt-2" target="_blank"
+                                   th:href="@{'/owner/table-sessions/' + ${order.tableSession.tableSessionId} + '/invoice'}">
+                                    <i class="bi bi-receipt"></i> View Combined Invoice
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                </th:block>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script th:src="@{/assets/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/assets/js/csrf.js}"></script>
+<script th:src="@{/assets/js/dark-mode-toggle.js}"></script>
+</body>
+</html>

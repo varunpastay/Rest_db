@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: assets('Track your order')}"></head>
+<body>
+<div class="container py-5" style="max-width:520px;">
+    <div class="text-center mb-4">
+        <i id="statusIcon" class="bi bi-hourglass-split brand-text" style="font-size:3.2rem;"></i>
+        <h1 class="h4 mt-3">Order <span th:text="${orderNo}">ORD-...</span></h1>
+        <span id="statusBanner" class="badge rounded-pill px-3 py-2" style="background-color:var(--brand);">Pending</span>
+    </div>
+
+    <ul class="status-timeline list-unstyled">
+        <li data-status="PENDING">Order received</li>
+        <li data-status="ACCEPTED">Accepted by the owner</li>
+        <li data-status="SERVED">Served to your table</li>
+        <li data-status="COMPLETED">Paid &amp; completed</li>
+    </ul>
+
+    <p class="text-center text-muted-brand small mt-4">This page refreshes automatically. Feel free to close and come back to it any time.</p>
+</div>
+
+<script th:inline="javascript">
+    window.APP_CONTEXT_PATH = '';
+    window.ORDER_NO = /*[[${orderNo}]]*/ '';
+</script>
+<!-- WebSocket push for instant updates - falls back to the existing poll if this fails to load/connect -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/7.0.0/stomp.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script th:src="@{/assets/js/realtime.js}"></script>
+<script th:src="@{/assets/js/order-track.js}"></script>
+</body>
+</html>

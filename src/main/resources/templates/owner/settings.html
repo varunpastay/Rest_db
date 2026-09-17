@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: assets('Settings')}"></head>
+<body>
+<div th:replace="~{fragments/owner-nav :: nav('settings')}"></div>
+
+<div class="container-fluid px-3 px-md-4 py-4" style="max-width:900px;">
+    <h1 class="h4 mb-4"><i class="bi bi-gear"></i> Restaurant Settings</h1>
+
+    <div class="alert alert-danger" th:if="${param.deleteError}" th:text="${param.deleteError[0]}"></div>
+
+    <ul class="nav nav-tabs mb-3" role="tablist">
+        <li class="nav-item"><button class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general">General</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-tax">Taxes</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-discount">Discounts</button></li>
+        <li class="nav-item"><button class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-backup">Backup</button></li>
+    </ul>
+
+    <div class="tab-content">
+        <div class="tab-pane fade show active" id="tab-general">
+            <form th:action="@{/owner/settings/general}" method="post" enctype="multipart/form-data">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small">Restaurant name</label>
+                        <input type="text" name="name" class="form-control" th:value="${restaurant.name}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Phone</label>
+                        <input type="text" name="phone" class="form-control" th:value="${restaurant.phone}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Email</label>
+                        <input type="email" name="email" class="form-control" th:value="${restaurant.email}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">GSTIN / Tax ID</label>
+                        <input type="text" name="gstin" class="form-control" th:value="${restaurant.gstin}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">UPI ID (for invoice payment QR)</label>
+                        <input type="text" name="upiId" class="form-control" placeholder="e.g. restaurant@okhdfcbank" th:value="${restaurant.upiId}">
+                        <div class="form-text">Printed as a scan-to-pay QR on every invoice, pre-filled with the exact bill amount. Leave blank to print invoices without a QR.</div>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small">Address</label>
+                        <input type="text" name="address" class="form-control" th:value="${restaurant.address}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Currency code</label>
+                        <input type="text" name="currencyCode" class="form-control" th:value="${restaurant.currencyCode}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Currency symbol</label>
+                        <input type="text" name="currencySymbol" class="form-control" th:value="${restaurant.currencySymbol}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Service charge %</label>
+                        <input type="number" step="0.01" name="serviceChargePercent" class="form-control" th:value="${restaurant.serviceChargePercent}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Theme color</label>
+                        <input type="color" name="themeColor" class="form-control form-control-color" th:value="${restaurant.themeColor}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Opening time</label>
+                        <input type="time" name="openingTime" class="form-control" th:value="${restaurant.openingTime}">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small">Closing time</label>
+                        <input type="time" name="closingTime" class="form-control" th:value="${restaurant.closingTime}">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Logo</label>
+                        <input type="file" name="logo" class="form-control" accept="image/*">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small">Banner</label>
+                        <input type="file" name="banner" class="form-control" accept="image/*">
+                    </div>
+                    <div class="col-12 form-check">
+                        <input class="form-check-input" type="checkbox" name="open" id="s_open" value="true" th:checked="${restaurant.open}">
+                        <label class="form-check-label" for="s_open">Currently accepting orders</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-brand mt-3"><i class="bi bi-check2"></i> Save Settings</button>
+            </form>
+        </div>
+
+        <div class="tab-pane fade" id="tab-tax">
+            <div class="card mb-3">
+                <div class="list-group list-group-flush">
+                    <div th:each="tax : ${taxes}" class="list-group-item d-flex justify-content-between align-items-center">
+                        <span th:text="${tax.name + ' - ' + tax.percent + '%'}"></span>
+                        <form th:action="@{'/owner/settings/tax/' + ${tax.taxId} + '/delete'}" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button>
+                        </form>
+                    </div>
+                    <p th:if="${taxes.isEmpty()}" class="p-3 mb-0 text-muted-brand">No taxes configured.</p>
+                </div>
+            </div>
+            <form th:action="@{/owner/settings/tax}" method="post" class="row g-2">
+                <div class="col-6"><input type="text" name="name" class="form-control" placeholder="e.g. GST" required></div>
+                <div class="col-4"><input type="number" step="0.01" name="percent" class="form-control" placeholder="%" required></div>
+                <div class="col-2"><button type="submit" class="btn btn-brand w-100">Add</button></div>
+            </form>
+        </div>
+
+        <div class="tab-pane fade" id="tab-discount">
+            <div class="card mb-3">
+                <div class="list-group list-group-flush">
+                    <div th:each="d : ${discounts}" class="list-group-item d-flex justify-content-between align-items-center">
+                        <span th:text="${d.code + ' - ' + d.value + (d.discountType.name() == 'PERCENT' ? '%' : '')}"></span>
+                        <form th:action="@{'/owner/settings/discount/' + ${d.discountId} + '/delete'}" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash3"></i></button>
+                        </form>
+                    </div>
+                    <p th:if="${discounts.isEmpty()}" class="p-3 mb-0 text-muted-brand">No discount codes yet.</p>
+                </div>
+            </div>
+            <form th:action="@{/owner/settings/discount}" method="post" class="row g-2">
+                <div class="col-3"><input type="text" name="code" class="form-control" placeholder="Code" required></div>
+                <div class="col-4"><select name="discountType" class="form-select"><option value="PERCENT">% off</option><option value="FLAT">Flat off</option></select></div>
+                <div class="col-3"><input type="number" step="0.01" name="value" class="form-control" placeholder="Value" required></div>
+                <div class="col-2"><button type="submit" class="btn btn-brand w-100">Add</button></div>
+            </form>
+        </div>
+
+        <div class="tab-pane fade" id="tab-backup">
+            <div class="alert alert-info" th:if="${param.backupRestored}">
+                <i class="bi bi-check2-circle"></i> Backup restored successfully.
+            </div>
+            <div class="alert alert-danger" th:if="${param.backupError}">
+                <i class="bi bi-exclamation-triangle"></i> Restore failed. Please check the file and try again.
+            </div>
+
+            <div class="card mb-3">
+                <div class="card-header fw-semibold"><i class="bi bi-download"></i> Export Backup</div>
+                <div class="card-body">
+                    <p class="text-muted-brand small">
+                        Downloads a JSON snapshot of your restaurant profile, branding images, categories,
+                        menu items &amp; photos, tables, taxes and discounts. Keep it somewhere safe.
+                    </p>
+                    <a class="btn btn-brand" th:href="@{/owner/settings/backup/export}">
+                        <i class="bi bi-file-earmark-arrow-down"></i> Download Backup
+                    </a>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header fw-semibold"><i class="bi bi-upload"></i> Restore Backup</div>
+                <div class="card-body">
+                    <p class="text-muted-brand small">
+                        Restoring <strong>merges and updates</strong> - it matches categories, menu items,
+                        tables, taxes and discounts by name/code and updates them, and adds anything missing.
+                        It never deletes existing data, so it's safe to run on a live restaurant. Note: this
+                        does <strong>not</strong> include order/sales history or your login - for that, rely
+                        on your hosting provider's regular database backups.
+                    </p>
+                    <form th:action="@{/owner/settings/backup/restore}" method="post" enctype="multipart/form-data"
+                          onsubmit="return confirm('Restore this backup into the live restaurant now?');">
+                        <input type="file" name="backupFile" accept="application/json" class="form-control mb-2" required>
+                        <button type="submit" class="btn btn-outline-brand"><i class="bi bi-arrow-clockwise"></i> Restore from File</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/assets/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/assets/js/csrf.js}"></script>
+<script th:src="@{/assets/js/dark-mode-toggle.js}"></script>
+</body>
+</html>

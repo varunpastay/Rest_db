@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<nav th:fragment="nav(active)" class="navbar navbar-expand-lg border-bottom sticky-top bg-body">
+    <div class="container-fluid px-3">
+        <a class="navbar-brand fw-bold brand-text" th:href="@{/owner/dashboard}"
+           th:text="${restaurant != null ? restaurant.name : 'Restaurant'}">Restaurant</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#ownerNavCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="ownerNavCollapse">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item"><a class="nav-link" th:classappend="${active == 'dashboard'} ? 'active fw-semibold' : ''" th:href="@{/owner/dashboard}"><i class="bi bi-speedometer2"></i> Live Orders</a></li>
+                <li class="nav-item"><a class="nav-link" th:classappend="${active == 'history'} ? 'active fw-semibold' : ''" th:href="@{/owner/orders/history}"><i class="bi bi-clock-history"></i> Order History</a></li>
+                <li class="nav-item"><a class="nav-link" th:classappend="${active == 'menu'} ? 'active fw-semibold' : ''" th:href="@{/owner/menu}"><i class="bi bi-egg-fried"></i> Menu</a></li>
+                <li class="nav-item"><a class="nav-link" th:classappend="${active == 'tables'} ? 'active fw-semibold' : ''" th:href="@{/owner/tables}"><i class="bi bi-qr-code"></i> Tables &amp; QR</a></li>
+                <li class="nav-item"><a class="nav-link" th:classappend="${active == 'reports'} ? 'active fw-semibold' : ''" th:href="@{/owner/reports}"><i class="bi bi-bar-chart"></i> Reports</a></li>
+                <li class="nav-item"><a class="nav-link" th:classappend="${active == 'settings'} ? 'active fw-semibold' : ''" th:href="@{/owner/settings}"><i class="bi bi-gear"></i> Settings</a></li>
+                <li class="nav-item"><a class="nav-link" th:classappend="${active == 'account'} ? 'active fw-semibold' : ''" th:href="@{/owner/account}"><i class="bi bi-person-circle"></i> Account</a></li>
+            </ul>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" id="restaurantOpenToggle" class="btn btn-sm d-flex align-items-center gap-1"
+                        th:if="${restaurant != null}"
+                        th:classappend="${restaurant.open} ? 'btn-outline-success' : 'btn-outline-secondary'">
+                    <span class="status-dot" th:classappend="${restaurant.open} ? 'open' : 'closed'"></span>
+                    <span th:text="${restaurant.open} ? 'Open' : 'Closed'">Open</span>
+                </button>
+                <button type="button" id="darkModeToggle" class="btn btn-sm btn-outline-brand"><i class="bi bi-moon-stars"></i></button>
+                <form th:action="@{/owner/logout}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-box-arrow-right"></i> Logout</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+</body>
+</html>

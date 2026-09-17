@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: assets('Tables & QR Codes')}"></head>
+<body>
+<div th:replace="~{fragments/owner-nav :: nav('tables')}"></div>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="h4 mb-0"><i class="bi bi-qr-code"></i> Tables &amp; QR Codes</h1>
+        <button type="button" class="btn btn-brand" data-bs-toggle="modal" data-bs-target="#tableModal">
+            <i class="bi bi-plus-lg"></i> New Table
+        </button>
+    </div>
+
+    <div class="alert alert-danger" th:if="${param.deleteError}" th:text="${param.deleteError[0]}"></div>
+
+    <div class="row g-3">
+        <div th:each="table : ${tables}" class="col-6 col-md-4 col-lg-3">
+            <div class="card h-100 text-center">
+                <div class="card-body">
+                    <h3 class="h6">Table <span th:text="${table.tableNo}"></span></h3>
+                    <div class="small text-muted-brand mb-2">Seats <span th:text="${table.capacity}"></span></div>
+                    <img th:src="@{'/owner/tables/' + ${table.tableId} + '/qr-image'}" alt="QR" class="img-fluid mb-2" style="max-width:140px;">
+                    <div class="d-flex flex-column gap-1">
+                        <a class="btn btn-sm btn-outline-brand" th:href="@{'/owner/tables/' + ${table.tableId} + '/qr-image'}" target="_blank" download>
+                            <i class="bi bi-download"></i> Download QR
+                        </a>
+                        <form th:action="@{'/owner/tables/' + ${table.tableId} + '/regenerate-qr'}" method="post">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary w-100"><i class="bi bi-arrow-repeat"></i> Regenerate</button>
+                        </form>
+                        <form th:action="@{'/owner/tables/' + ${table.tableId} + '/toggle'}" method="post">
+                            <button type="submit" class="btn btn-sm w-100" th:classappend="${table.active} ? 'btn-outline-success' : 'btn-outline-warning'"
+                                    th:text="${table.active} ? 'Active' : 'Inactive'"></button>
+                        </form>
+                        <form th:action="@{'/owner/tables/' + ${table.tableId} + '/delete'}" method="post" onsubmit="return confirm('Delete this table?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger w-100"><i class="bi bi-trash3"></i> Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <p th:if="${tables.isEmpty()}" class="text-muted-brand">No tables yet - add one to generate its QR code.</p>
+    </div>
+</div>
+
+<div class="modal fade" id="tableModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form class="modal-content" th:action="@{/owner/tables}" method="post">
+            <div class="modal-header"><h5 class="modal-title">New Table</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+            <div class="modal-body">
+                <label class="form-label small">Table number / name</label>
+                <input type="text" name="tableNo" class="form-control mb-2" required>
+                <label class="form-label small">Capacity</label>
+                <input type="number" name="capacity" class="form-control" value="4" min="1">
+            </div>
+            <div class="modal-footer"><button type="submit" class="btn btn-brand">Create &amp; Generate QR</button></div>
+        </form>
+    </div>
+</div>
+
+<script th:src="@{/assets/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/assets/js/csrf.js}"></script>
+<script th:src="@{/assets/js/dark-mode-toggle.js}"></script>
+</body>
+</html>

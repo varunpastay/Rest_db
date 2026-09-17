@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: assets(${restaurant.name + ' - Menu'})}"></head>
+<body>
+<div class="container-fluid px-3 px-md-4 py-3 pb-5">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h1 class="h4 mb-0" th:text="${restaurant.name}">Restaurant</h1>
+            <div class="small text-muted-brand">
+                <i class="bi bi-grid-3x3-gap"></i> Table <span th:text="${tableNo}">1</span>
+                &nbsp;&middot;&nbsp;
+                <span class="status-dot" th:classappend="${restaurant.open} ? 'open' : 'closed'"></span>
+                <span th:text="${restaurant.open} ? 'Accepting orders' : 'Currently closed'">Open</span>
+            </div>
+        </div>
+        <button type="button" id="darkModeToggle" class="btn btn-sm btn-outline-brand"><i class="bi bi-moon-stars"></i></button>
+    </div>
+
+    <button type="button" class="btn btn-outline-brand w-100 mb-3" data-bs-toggle="modal" data-bs-target="#helpModal">
+        <i class="bi bi-bell"></i> Need Help? Call the Owner
+    </button>
+
+    <!-- Shared "already ordered at this table" list - visible to every phone that scans this
+         table's QR, so a party ordering from several phones can see the combined order so far. -->
+    <div id="tableOrdersPanel" class="card mb-3 d-none">
+        <div class="card-header d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#tableOrdersBody" style="cursor:pointer;">
+            <span><i class="bi bi-people"></i> Already ordered at this table</span>
+            <i class="bi bi-chevron-down"></i>
+        </div>
+        <div class="collapse show" id="tableOrdersBody">
+            <ul id="tableOrdersList" class="list-group list-group-flush"></ul>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <input type="search" id="menuSearch" class="form-control" placeholder="Search the menu...">
+    </div>
+
+    <nav class="category-nav d-flex gap-2 overflow-auto mb-4 pb-1">
+        <a href="#" class="nav-link active" data-filter="all">All</a>
+        <a th:each="cat : ${categories}" href="#" class="nav-link" th:data-filter="${cat.categoryId}" th:text="${cat.name}">Category</a>
+    </nav>
+
+    <div id="noResults" class="text-center text-muted-brand py-5 d-none">
+        <i class="bi bi-search" style="font-size:2rem;"></i>
+        <p class="mt-2">No dishes match your search.</p>
+    </div>
+
+    <div th:each="cat : ${categories}" th:id="'cat-' + ${cat.categoryId}" class="menu-category mb-4">
+        <h2 class="h5 mb-3" th:text="${cat.name}">Category</h2>
+        <div class="row g-3">
+            <div th:each="food : ${foodItems}" th:if="${food.category.categoryId == cat.categoryId}"
+                 class="col-12 col-sm-6 col-lg-4 food-item-col"
+                 th:data-name="${food.name}" th:data-category-id="${cat.categoryId}">
+                <div class="card h-100">
+                    <div class="row g-0 h-100">
+                        <div class="col-4" th:if="${food.primaryImagePath != null}">
+                            <img th:src="@{/images(path=${food.primaryImagePath})}" class="img-fluid rounded-start h-100" style="object-fit:cover;" alt="">
+                        </div>
+                        <div th:classappend="${food.primaryImagePath != null} ? 'col-8' : 'col-12'">
+                            <div class="card-body d-flex flex-column h-100">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h3 class="h6 mb-1" th:text="${food.name}">Item</h3>
+                                    <i class="bi bi-square-fill" th:style="${food.foodType.name() == 'VEG'} ? 'color:#2e8b57;font-size:0.6rem;' : 'color:#b0413e;font-size:0.6rem;'"></i>
+                                </div>
+                                <p class="small text-muted-brand flex-grow-1" th:text="${food.description}">Description</p>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <div>
+                                        <span class="fw-bold brand-text" th:text="${restaurant.currencySymbol + food.effectivePrice}">$0</span>
+                                        <span th:if="${food.offerPrice != null}" class="text-muted-brand text-decoration-line-through small ms-1" th:text="${restaurant.currencySymbol + food.price}"></span>
+                                    </div>
+                                    <div class="add-control" th:data-food-item-id="${food.foodItemId}">
+                                        <button type="button" class="btn btn-sm btn-brand add-btn" th:disabled="${!restaurant.open}">
+                                            <i class="bi bi-plus-lg"></i> Add
+                                        </button>
+                                        <div class="btn-group btn-group-sm qty-stepper d-none">
+                                            <button type="button" class="btn btn-outline-brand dec-btn">-</button>
+                                            <span class="btn qty-display" style="pointer-events:none;">1</span>
+                                            <button type="button" class="btn btn-outline-brand inc-btn">+</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sticky cart bar -->
+<div id="cartBar" class="d-none position-fixed bottom-0 start-0 end-0 p-3">
+    <div class="container-fluid px-0">
+        <button type="button" class="btn btn-brand w-100 d-flex justify-content-between align-items-center py-3"
+                data-bs-toggle="offcanvas" data-bs-target="#cartDrawer">
+            <span id="cartItemCountLabel" data-count="0">0 items</span>
+            <span id="cartSubtotal">0.00</span>
+            <span>View Cart <i class="bi bi-arrow-right"></i></span>
+        </button>
+    </div>
+</div>
+
+<!-- Cart drawer -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="cartDrawer">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title"><i class="bi bi-cart3"></i> Your Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+        <div id="orderError" class="alert alert-danger d-none"></div>
+        <p id="cartEmptyMessage" class="text-muted-brand text-center py-4">Your cart is empty.</p>
+        <div id="cartItemsList" class="flex-grow-1 overflow-auto"></div>
+        <div class="mt-3">
+            <input type="text" id="discountCode" class="form-control mb-2" placeholder="Discount code (optional)">
+            <textarea id="customerNote" class="form-control mb-2" rows="2" placeholder="Note for the kitchen (optional)"></textarea>
+            <div class="d-flex justify-content-between fw-bold mb-2">
+                <span>Subtotal</span>
+                <span id="drawerSubtotal">0.00</span>
+            </div>
+            <button type="button" id="placeOrderBtn" class="btn btn-brand w-100 py-2">
+                <i class="bi bi-check2-circle"></i> Place Order
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Need help modal -->
+<div class="modal fade" id="helpModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-bell"></i> Need Something?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="helpSentMessage" class="alert alert-success d-none">
+                    <i class="bi bi-check2-circle"></i> Got it - the owner has been notified.
+                </div>
+                <div id="helpError" class="alert alert-danger d-none"></div>
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-brand text-start help-option" data-type="CALL_WAITER">
+                        <i class="bi bi-person-raised-hand"></i> Call the owner over
+                    </button>
+                    <button type="button" class="btn btn-outline-brand text-start help-option" data-type="CLEAN_TABLE">
+                        <i class="bi bi-droplet"></i> Please clean this table
+                    </button>
+                    <button type="button" class="btn btn-outline-brand text-start help-option" data-type="WATER_REFILL">
+                        <i class="bi bi-cup-straw"></i> Water refill
+                    </button>
+                    <button type="button" class="btn btn-outline-brand text-start help-option" data-type="REQUEST_BILL">
+                        <i class="bi bi-receipt"></i> Bring the bill
+                    </button>
+                    <button type="button" class="btn btn-outline-danger text-start help-option" data-type="COMPLAINT">
+                        <i class="bi bi-exclamation-triangle"></i> I have a complaint
+                    </button>
+                </div>
+                <textarea id="helpMessage" class="form-control mt-3" rows="2" placeholder="Add a note (optional)"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" id="helpOtherBtn" class="btn btn-outline-secondary"><i class="bi bi-chat-dots"></i> Something else - send note</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:inline="javascript">
+    window.APP_CONTEXT_PATH = '';
+    window.CURRENCY_SYMBOL = /*[[${restaurant.currencySymbol}]]*/ '$';
+    window.RESTAURANT_OPEN = /*[[${restaurant.open}]]*/ true;
+    window.TABLE_ID = /*[[${tableId}]]*/ 0;
+</script>
+<script th:src="@{/assets/vendor/bootstrap/js/bootstrap.bundle.min.js}"></script>
+<script th:src="@{/assets/js/notification-sound.js}"></script>
+<script th:src="@{/assets/js/menu.js}"></script>
+<script th:src="@{/assets/js/cart.js}"></script>
+<script th:src="@{/assets/js/assistance.js}"></script>
+<!-- WebSocket push for instant updates - falls back to the existing poll if this fails to load/connect -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.6.1/sockjs.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/7.0.0/stomp.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<script th:src="@{/assets/js/realtime.js}"></script>
+<script th:src="@{/assets/js/table-orders.js}"></script>
+</body>
+</html>

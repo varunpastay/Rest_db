@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/head :: assets('Welcome')}"></head>
+<body class="d-flex align-items-center justify-content-center vh-100 text-center">
+    <div class="p-4">
+        <i class="bi bi-qr-code-scan brand-text" style="font-size:3.5rem;"></i>
+        <h1 class="mt-3" th:text="${restaurant.name}">Restaurant</h1>
+        <p class="text-muted-brand">Scan the QR code on your table to view the menu and place your order.</p>
+    </div>
+</body>
+</html>
